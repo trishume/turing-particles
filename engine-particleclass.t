@@ -150,12 +150,27 @@ class WavyParticle
     end Render
 end WavyParticle
 
+class ColoredParticle
+    inherit BasicParticle
+
+    % if you create another class like this
+    % remember to add it to the ParticleSystem imports
+
+    body proc Render
+	var size := energy div 150
+	%var col := Rand.Int(1,200)
+	var col := abs(round((sin(energy div 50) * 20) + 40))
+
+	Draw.FillOval (round (pos.x), round (pos.y), size, size, col)
+    end Render
+end ColoredParticle
+
 % ====== THE MASTERMIND =======
 % the system wrangles all 'dem particles
 
 class ParticleSystem
     import vector2D, Particle, BasicParticle,
-	SizeParticle, GravityParticle, DragParticle, WavyParticle
+	SizeParticle, GravityParticle, DragParticle, WavyParticle,ColoredParticle
     export Update, DrawParticles, AddParticle, AddParticles, Sweep
 
     var first : ^Particle := nil
@@ -215,7 +230,7 @@ class ParticleSystem
 	% change to any of the particle classes
 	% example:
 	%new SizeParticle, cur
-	new BasicParticle, cur % allocate a new particle
+	new ColoredParticle, cur % allocate a new particle
 
 	if last = nil then % no particles
 	    first := cur
