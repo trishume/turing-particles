@@ -38,6 +38,12 @@ class ParticleSystem
 	    cur -> vel.x *= 1 - drag*dt
 	    cur -> vel.y *= 1 - drag*dt
 	    */
+	    
+	    % POSIBILITIES! - gravity:
+	    /*
+	    var grav := 0.0009
+	    cur -> vel.y -= grav*dt
+	    */
 
 	    cur -> energy -= 1 * dt %decrease energy
 
@@ -114,7 +120,7 @@ class ParticleSystem
 
 	cur -> vel := RandVector (-0.2, 0.2) % change numbers to alter how fast particles are
 
-	cur -> energy := Rand.Int (100, 700) % change numbers to alter how fast particles die
+	cur -> energy := Rand.Int (200, 800) % change numbers to alter how fast particles die
     end AddParticle
 end ParticleSystem
 
