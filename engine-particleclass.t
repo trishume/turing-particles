@@ -1,11 +1,14 @@
 View.Set ("offscreenonly")
 
+% a position/direction
+% it has both direction, and MAGNITUDE! (despicable me reference)
 type vector2D :
     record
 	x : real
 	y : real
     end record
 
+% get a random position/direction with values between min and max
 fcn RandVector (min : real, max : real) : vector2D
     var v : vector2D
 
@@ -15,12 +18,14 @@ fcn RandVector (min : real, max : real) : vector2D
     result v
 end RandVector
 
+% ====== ABSTRACT STUFF =======
+% the particle class doesn't do anything by itself.
+% it just embodies the essence of particleness.
+
 class Particle
     import vector2D, RandVector
     export Construct, Update, Render, SetNext, next, energy
 
-    var pos : vector2D
-    var vel : vector2D
     var energy : int
 
     var next : ^Particle
@@ -29,34 +34,52 @@ class Particle
     deferred proc Update (dt : int)
     deferred proc Render
 
+
+    proc SetNext (n : ^Particle)
+	next := n
+    end SetNext
+end Particle
+
+% ====== BASIC PARTICLE =======
+% has velocity and position and draws as a circle
+
+class BasicParticle
+    inherit Particle
+
+    var pos : vector2D
+    var vel : vector2D
+
     body proc Construct (x : int, y : int)
 	pos.x := x
 	pos.y := y
-
+	
+	% go pinging off in a random direction
 	vel := RandVector (-0.2, 0.2) % change numbers to alter how fast particles are
-
+	
+	% how long it will last
 	energy := Rand.Int (200, 800) % change numbers to alter how fast particles die
     end Construct
 
+    deferred proc Extras (dt : int)
+    body proc Extras (dt : int)
+	% POSIBILITIES! - drag:
+	% might want to bump up the starting speed if using this
+	/* <-- put a % before this line to enable
+
+	 %*/
+
+	% POSIBILITIES! - gravity:
+	/* <-- put a % before this line to enable
+
+	 %*/
+    end Extras
 
     body proc Update (dt : int)
 	% move it
 	pos.x += vel.x * dt
 	pos.y += vel.y * dt
 
-	% POSIBILITIES! - drag:
-	% might want to bump up the starting speed if using this
-	/*
-	 var drag := 0.0003
-	 vel.x *= 1 - drag*dt
-	 vel.y *= 1 - drag*dt
-	 */
-
-	% POSIBILITIES! - gravity:
-	/*
-	 var grav := 0.0009
-	 vel.y -= grav*dt
-	 */
+	Extras (dt)
 
 	energy -= 1 * dt      %decrease energy
     end Update
@@ -68,14 +91,46 @@ class Particle
 
 	Draw.FillOval (round (pos.x), round (pos.y), size, size, brightblue)
     end Render
-    
-    proc SetNext(n : ^Particle)
-	next := n
-    end SetNext
-end Particle
+end BasicParticle
+
+
+% ====== EXAMPLES =======
+% some examples of creating your own particle types
+
+class GravityParticle
+    inherit BasicParticle
+
+    % if you create another class like this
+    % remember to add it to the ParticleSystem imports
+
+    body proc Extras (dt : int)
+	var grav := 0.0009
+	vel.y -= grav * dt % add to down speed (-y is down, remember math class?)
+    end Extras
+end GravityParticle
+
+class DragParticle
+    inherit BasicParticle
+
+    % if you create another class like this
+    % remember to add it to the ParticleSystem imports
+
+    body proc Extras (dt : int)
+	var drag := 0.0003
+
+	% slow down by multiplying by 1 - drag*dt
+	% EX. 1 - 0.0003 * 1 = 0.9997
+	% so speed gets smaller slowly
+	vel.x *= 1 - drag * dt
+	vel.y *= 1 - drag * dt
+    end Extras
+end DragParticle
+
+% ====== THE MASTERMIND =======
+% the system wrangles all 'dem particles
 
 class ParticleSystem
-    import vector2D, Particle
+    import vector2D, Particle, BasicParticle, GravityParticle, DragParticle
     export Update, DrawParticles, AddParticle, Sweep
 
     var first : ^Particle := nil
@@ -113,7 +168,7 @@ class ParticleSystem
 	    if cur -> next not= nil and cur -> next -> energy <= 0 then
 		var dead := cur -> next % save location
 
-		cur -> SetNext(dead -> next) % fill gap
+		cur -> SetNext (dead -> next) % fill gap
 
 		if dead = last then % was it the last one
 		    last := cur
@@ -130,22 +185,25 @@ class ParticleSystem
 	var cur : ^Particle
 
 	if last = nil then % no particles
-	    new first % allocate first
+	    new GravityParticle, first % allocate first
 	    last := first
 	    cur := first
 	else % add to end
-	    new cur % allocate a new particle
+	    new GravityParticle, cur % allocate a new particle
 
 	    % tack it on
-	    last -> SetNext(cur)
+	    last -> SetNext (cur)
 	    last := cur
 	end if
 
-	cur -> SetNext(nil)
+	cur -> SetNext (nil)
 
 	cur -> Construct (x, y)
     end AddParticle
 end ParticleSystem
+
+% ====== BASIC USAGE =======
+% create particles at mouse click
 
 var ps : ^ParticleSystem
 new ps
