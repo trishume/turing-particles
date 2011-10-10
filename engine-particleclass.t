@@ -52,10 +52,10 @@ class BasicParticle
     body proc Construct (x : int, y : int)
 	pos.x := x
 	pos.y := y
-	
+
 	% go pinging off in a random direction
 	vel := RandVector (-0.2, 0.2) % change numbers to alter how fast particles are
-	
+
 	% how long it will last
 	energy := Rand.Int (200, 800) % change numbers to alter how fast particles die
     end Construct
@@ -85,9 +85,7 @@ class BasicParticle
     end Update
 
     body proc Render
-	% POSIBILITIES! - size:
-	%var size := 2 %constant size
-	var size := energy div 100          % size depends on energy
+	var size := 2 %constant size
 
 	Draw.FillOval (round (pos.x), round (pos.y), size, size, brightblue)
     end Render
@@ -97,8 +95,21 @@ end BasicParticle
 % ====== EXAMPLES =======
 % some examples of creating your own particle types
 
-class GravityParticle
+class SizeParticle
     inherit BasicParticle
+
+    % if you create another class like this
+    % remember to add it to the ParticleSystem imports
+
+    body proc Render
+	var size := energy div 100          % size depends on energy
+
+	Draw.FillOval (round (pos.x), round (pos.y), size, size, brightblue)
+    end Render
+end SizeParticle
+
+class GravityParticle
+    inherit SizeParticle
 
     % if you create another class like this
     % remember to add it to the ParticleSystem imports
@@ -126,12 +137,26 @@ class DragParticle
     end Extras
 end DragParticle
 
+class WavyParticle
+    inherit BasicParticle
+
+    % if you create another class like this
+    % remember to add it to the ParticleSystem imports
+
+    body proc Render
+	var size := round (cos (pos.y * 0.1) + sin (pos.x * 0.1) + 2)  % size depends function
+
+	Draw.FillOval (round (pos.x), round (pos.y), size, size, brightblue)
+    end Render
+end WavyParticle
+
 % ====== THE MASTERMIND =======
 % the system wrangles all 'dem particles
 
 class ParticleSystem
-    import vector2D, Particle, BasicParticle, GravityParticle, DragParticle
-    export Update, DrawParticles, AddParticle, Sweep
+    import vector2D, Particle, BasicParticle,
+	SizeParticle, GravityParticle, DragParticle, WavyParticle
+    export Update, DrawParticles, AddParticle, AddParticles, Sweep
 
     var first : ^Particle := nil
     var last : ^Particle := nil
@@ -181,17 +206,22 @@ class ParticleSystem
 	end loop
     end Sweep
 
+
     proc AddParticle (x : int, y : int)
 	var cur : ^Particle
 
-	if last = nil then % no particles
-	    new GravityParticle, first % allocate first
-	    last := first
-	    cur := first
-	else % add to end
-	    new GravityParticle, cur % allocate a new particle
+	% FIDDLE WITH THIS, DO IT:
+	% change particle type here
+	% change to any of the particle classes
+	% example:
+	%new SizeParticle, cur
+	new BasicParticle, cur % allocate a new particle
 
-	    % tack it on
+	if last = nil then % no particles
+	    first := cur
+	    last := first
+	else
+	    % tack particle on
 	    last -> SetNext (cur)
 	    last := cur
 	end if
@@ -200,6 +230,12 @@ class ParticleSystem
 
 	cur -> Construct (x, y)
     end AddParticle
+
+    proc AddParticles (x : int, y : int, num : int)
+	for i : 1 .. num
+	    AddParticle (x, y)
+	end for
+    end AddParticles
 end ParticleSystem
 
 % ====== BASIC USAGE =======
@@ -215,7 +251,7 @@ loop
     var x, y, button : int
     Mouse.Where (x, y, button)
     if button > 0 then
-	ps -> AddParticle (x, y)
+	ps -> AddParticles (x, y, 2)
     end if
 
     % comment out for full trails:
