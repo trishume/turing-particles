@@ -159,7 +159,7 @@ class ColoredParticle
     body proc Render
 	var size := energy div 150
 	%var col := Rand.Int(1,200)
-	var col := abs(round((sin(energy div 50) * 20) + 40))
+	var col := abs (round ((sin (energy div 50) * 20) + 40))
 
 	Draw.FillOval (round (pos.x), round (pos.y), size, size, col)
     end Render
@@ -170,7 +170,7 @@ end ColoredParticle
 
 class ParticleSystem
     import vector2D, Particle, BasicParticle,
-	SizeParticle, GravityParticle, DragParticle, WavyParticle,ColoredParticle
+	SizeParticle, GravityParticle, DragParticle, WavyParticle, ColoredParticle
     export Update, DrawParticles, AddParticle, AddParticles, Sweep
 
     var first : ^Particle := nil
