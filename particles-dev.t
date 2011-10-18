@@ -1,3 +1,5 @@
+include "profiler.t"
+
 View.Set ("offscreenonly")
 
 % a position/direction
@@ -189,15 +191,19 @@ class ParticleSystem
     var first : ^Particle := nil
     var last : ^Particle := nil
 
-    proc Update (dt : int)
+    fcn Update (dt : int) : int
 	var cur := first
+	var count := 0
 	loop
 	    exit when cur = nil
 
 	    cur -> Update (dt)
+	    
+	    count += 1
 
 	    cur := cur -> next %move to next one
 	end loop
+	result count
     end Update
 
     proc DrawParticles
@@ -206,7 +212,7 @@ class ParticleSystem
 	    exit when cur = nil
 
 	    if cur -> energy > 0 then
-		cur -> Render
+		   cur -> Render
 	    end if
 
 	    cur := cur -> next %move to next one
@@ -275,7 +281,7 @@ new ps
 var lastFrame := Time.Elapsed
 
 var x, y, button : int
-var particles : int := 0
+var particles : int := 10
 
 var targetfps : int := 60
 
@@ -286,23 +292,34 @@ loop
      if button > 0 and 0 < x and x < maxx and 0 < y and y < maxy then
      ps -> AddParticles (x, y, particles)
      end if*/
+    ProfBegin
     ps -> AddParticles (maxx div 2, maxy div 2, particles)
+    ProfEnd("add")
     cls
     if (Rand.Real <= gcinterval) then
+	ProfBegin
 	ps -> Sweep
+	ProfEnd("sweep")
     end if
     var frametime : int := Time.Elapsed - lastFrame
-    ps -> Update (frametime)
+    
+    ProfBegin
+    var pcount := ps -> Update (frametime)
+    ProfEnd("update")
+    
     lastFrame := Time.Elapsed
+    
+    ProfBegin
     ps -> DrawParticles
-    if (frametime > 1000 div targetfps) then
-	particles -= 1
-    elsif (frametime < 1000 div (targetfps + 5)) then
-	particles += 1
-    end if
-    if (frametime = 0) then
-	frametime := 1
-    end if
-    put particles, " particles at ", 1000 div frametime, " fps with target ", targetfps
+    ProfEnd("render")
+
+    put pcount, " particles at ", 1000 div frametime, " fps with target ", targetfps
     View.Update
+    
+    ProfTick
+    
+    % q key to quit
+    var chars : array char of boolean
+    Input.KeyDown (chars)
+    exit when chars ('q')
 end loop
